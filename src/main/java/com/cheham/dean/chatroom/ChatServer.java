@@ -17,7 +17,11 @@ public class ChatServer {
 
     private InetAddress localAddr = null;
 
+    private String localHost = null;
+
     private String clientAddr = null;
+
+    private String clientHost = null;
 
     public static void main(String[] args) {
         new ChatServer().run();
@@ -26,7 +30,9 @@ public class ChatServer {
     public String getLocalhost() {
         try {
             localAddr = InetAddress.getLocalHost();
-            return localAddr.getHostAddress();
+            localHost = localAddr.getHostAddress();
+            if (localHost.equals("127.0.0.1")) return "服务端";
+            else return localHost;
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
@@ -35,7 +41,9 @@ public class ChatServer {
 
     public String getClienthost(Socket socket) {
         clientAddr = socket.getInetAddress().toString();
-        return clientAddr.substring(1, clientAddr.length());
+        clientHost = clientAddr.substring(1, clientAddr.length());
+        if (clientHost.equals("127.0.0.1")) return "客户端";
+        else return clientHost;
     }
 
     public void run() {
@@ -53,14 +61,15 @@ public class ChatServer {
             String receive_msg;
             String reply_msg;
             while ( (receive_msg = receiver.readLine()) != null ) {
-                if (receive_msg.equalsIgnoreCase("bye")) break;
                 log.info(String.format(getClienthost(socket)+"说：%s", receive_msg));
+                if (receive_msg.equalsIgnoreCase("bye")) break;
+
                 System.out.print(getLocalhost()+"说：");
                 input = new BufferedReader(new InputStreamReader(System.in));
                 reply_msg = input.readLine();
-                if (reply_msg.equalsIgnoreCase("bye")) break;
                 replier.println(String.format("%s", reply_msg));
                 replier.flush();
+                if (reply_msg.equalsIgnoreCase("bye")) break;
             }
             replier.close();
             input.close();
