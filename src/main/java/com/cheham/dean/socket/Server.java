@@ -34,7 +34,7 @@ public class Server {
         while (true) {
             try {
                 Socket socket = ss.accept();
-                log.info("客户端："+socket.getInetAddress().getHostAddress()+"已连接到服务器");
+                log.info("客户端"+socket.getInetAddress().getHostAddress()+"已连接到服务器");
                 BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
                 bw.write("你已和服务器建立通信，现在进入你的请求处理线程"+"\n");
@@ -46,7 +46,7 @@ public class Server {
                         while (true) {
                             try {
                                 String msg = br.readLine();
-                                log.info(msg);
+                                log.info("客户端说："+msg);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
