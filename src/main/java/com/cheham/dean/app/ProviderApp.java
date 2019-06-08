@@ -1,8 +1,11 @@
 package com.cheham.dean.app;
 
 import com.cheham.dean.request.CalculateRpcRequest;
+import com.cheham.dean.request.GatewayRpcBean;
 import com.cheham.dean.service.Calculater;
 import com.cheham.dean.service.CalculaterImpl;
+import com.cheham.dean.service.Gateway;
+import com.cheham.dean.service.GatewayImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +19,9 @@ public class ProviderApp {
 
     private static Logger logger = LoggerFactory.getLogger(ProviderApp.class);
 
-    private Calculater calculater = new CalculaterImpl();
+    private Calculater calcService = new CalculaterImpl();
+
+    private Gateway gatewayService = new GatewayImpl();
 
     public void run() throws IOException {
         ServerSocket listener = new ServerSocket(9090);
@@ -24,38 +29,61 @@ public class ProviderApp {
         try {
             while (true) {
                 Socket socket = listener.accept();
+                //将请求反序列化
+                ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+                ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
                 try {
-                    //将请求反序列化
-                    ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
                     Object object = ois.readObject();
-                    //调用服务
-                    int result = 0;
-                    if (object instanceof CalculateRpcRequest) {
-                        CalculateRpcRequest request = (CalculateRpcRequest) object;
-                        switch (request.getMethod()) {
-                            case "add":
-                                result = calculater.add(request.getParam1(), request.getParam2());
-                                break;
-                            case "subtract":
-                                result = calculater.subtract(request.getParam1(), request.getParam2());
-                                break;
-                            default:
-                                throw new UnsupportedOperationException();
-                        }
-                    }
-                    //返回结果
-                    ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-                    oos.writeObject(Integer.valueOf(result));
+                    calculateHandler(object, oos);
+//                    gatewayHandler(object, oos);
                 } catch (Exception e) {
                     e.printStackTrace();
                     logger.error("fail", e);
                 } finally {
+                    oos.close();
+                    ois.close();
                     socket.close();
                 }
             }
         } finally {
             listener.close();
         }
+    }
+
+    public void gatewayHandler(Object object, ObjectOutputStream oos) throws IOException {
+        Object result = null;
+        if (object instanceof GatewayRpcBean) {
+            GatewayRpcBean bean = (GatewayRpcBean) object;
+            switch (bean.getMethod()) {
+                case "findGatewayById":
+                    result = gatewayService.findGatewayById(bean.getId());
+                    break;
+                default:
+                    throw new UnsupportedOperationException();
+            }
+        }
+        oos.writeObject(result);
+    }
+
+    public void calculateHandler(Object object, ObjectOutputStream oos) throws IOException {
+        //调用服务
+        Integer result = null;
+        if (object instanceof CalculateRpcRequest) {
+            CalculateRpcRequest request = (CalculateRpcRequest) object;
+            switch (request.getMethod()) {
+                case "add":
+                    result = calcService.add(request.getParam1(), request.getParam2());
+                    break;
+                case "subtract":
+                    result = calcService.subtract(request.getParam1(), request.getParam2());
+                    break;
+                default:
+                    throw new UnsupportedOperationException();
+            }
+        }
+        //返回结果
+        logger.info(result.toString());
+        oos.writeObject(result);
     }
 
     public static void main(String[] args) {

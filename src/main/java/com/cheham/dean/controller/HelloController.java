@@ -1,12 +1,15 @@
 package com.cheham.dean.controller;
 
 import com.cheham.dean.app.ProviderApp;
+import com.cheham.dean.service.Gateway;
+import com.cheham.dean.service.GatewayImpl;
 import com.jfinal.core.ActionKey;
-import com.jfinal.core.Controller;
 
 import java.io.IOException;
 
-public class HelloController extends Controller {
+public class HelloController extends BaseController {
+
+    Gateway service = new GatewayImpl();
 
     @ActionKey("/hello/say")
     public void sayHello() {
@@ -20,6 +23,11 @@ public class HelloController extends Controller {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @ActionKey("/hello/gateway")
+    public void gateway() {
+        OK(service.findGatewayById("CXAA18AAA0100071"));
     }
 
 }
